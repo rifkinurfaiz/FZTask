@@ -2,9 +2,8 @@ package com.example.administrator.fztask;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.SQLException;
 import android.os.AsyncTask;
-import android.os.Build;
-import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,15 +23,15 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class LoginActivity extends AppCompatActivity {
+public class ActivityLogin extends AppCompatActivity {
 
     private EditText textViewUsername;
     private EditText textViewPassword;
     private ProgressBar progressBar;
     private Button buttonLogin;
-    private String status, agentId, agentName, taskAssignmentId, taskParent, taskType, siteName, lon, lat = "";
+    private String status, agentId, agentName, taskAssignmentId, taskParent, taskType, siteName, lon, lat, address, city = "";
     private static final String loginAPI = "http://192.168.43.19/android/login.php";
-
+    private DBHelper db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,13 +39,13 @@ public class LoginActivity extends AppCompatActivity {
 
         SharedPreferences sp = this.getSharedPreferences("Login", 0);
         //If already login then open homepage directly
-        if(sp.getString("name", null) != null) {
+        if (sp.getString("agentName", null) != null) {
             //Open driver homepage activity
-            Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
-            LoginActivity.this.startActivity(myIntent);
+            Intent myIntent = new Intent(ActivityLogin.this, ActivityMain.class);
+            ActivityLogin.this.startActivity(myIntent);
             finish();
         } else {
-            setContentView(R.layout.login_page);
+            setContentView(R.layout.activity_login);
 
             textViewUsername = (EditText) findViewById(R.id.editTextUsername);
             textViewPassword = (EditText) findViewById(R.id.editTextPassword);
@@ -65,13 +64,14 @@ public class LoginActivity extends AppCompatActivity {
                         //Set session
                         SharedPreferences sp = getSharedPreferences("Login", 0);
                         SharedPreferences.Editor ed = sp.edit();
-                        ed.putString("username", uname);
-                        ed.putInt("numOfTask", 0);
+                        ed.putString("agentName", uname);
+                        ed.putString("agentId", null);
+                        ed.putString("taskAssignmentId", null);
                         ed.commit();
 
                         //Open driver homepage activity
-                        Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
-                        LoginActivity.this.startActivity(myIntent);
+                        Intent myIntent = new Intent(ActivityLogin.this, ActivityMain.class);
+                        ActivityLogin.this.startActivity(myIntent);
                         finish();
                     } else {
                         JSONObject postData = new JSONObject();
@@ -141,43 +141,44 @@ public class LoginActivity extends AppCompatActivity {
             super.onPostExecute(result);
             Log.e("TAG", result);
             try {
-                JSONObject jsonObject = new JSONObject(result);
-                JSONArray loginJsonArray = jsonObject.getJSONArray("login");
-
-                JSONObject statusJsonObject = loginJsonArray.getJSONObject(0);
-                status = statusJsonObject.getString("status");
-                Log.d("STATUS", status);
-                if (status != null && status.equals("200")) {
-                    JSONObject agentIdJsonObject = loginJsonArray.getJSONObject(1);
-                    JSONObject agentNameObject = loginJsonArray.getJSONObject(2);
-                    agentId = agentIdJsonObject.getString("agentId");
-                    agentName = agentNameObject.getString("agentName");
-
-                    JSONArray taskJsonArray = jsonObject.getJSONArray("task");
-                    JSONObject taskAssignmentIdJsonObject = taskJsonArray.getJSONObject(0);
-                    JSONObject taskParentObject = taskJsonArray.getJSONObject(1);
-                    JSONObject taskTypeObject = taskJsonArray.getJSONObject(2);
-                    JSONObject siteNameObject = taskJsonArray.getJSONObject(3);
-                    JSONObject lonObject = taskJsonArray.getJSONObject(4);
-                    JSONObject latObject = taskJsonArray.getJSONObject(5);
-                    taskAssignmentId = taskAssignmentIdJsonObject.getString("taskAssignmentId");
-                    taskParent = taskParentObject.getString("taskParent");
-                    taskType = taskTypeObject.getString("taskType");
-                    siteName = siteNameObject.getString("siteName");
-                    lon = lonObject.getString("lon");
-                    lat = latObject.getString("lat");
-
+                JSONArray jsonArray = new JSONArray(result);
+                JSONObject statusLoginObj = jsonArray.getJSONObject(0);
+                String statusLogin = statusLoginObj.getString("status");
+                Log.d("STATUS", statusLogin);
+                if (statusLogin.equals("200")) {
+                    for (int i = 1; i < jsonArray.length(); i++) {
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        agentName = jsonObject.getString("agent_name");
+                        agentId = jsonObject.getString("agent_id");
+                        taskAssignmentId = jsonObject.getString("task_assignment_id");
+                        taskParent = jsonObject.getString("task_parent");
+                        taskType = jsonObject.getString("task_type").substring(0,3).toUpperCase();
+                        siteName = jsonObject.getString("site_name");
+                        lon = jsonObject.getString("lon");
+                        lat = jsonObject.getString("lat");
+                        address = jsonObject.getString("address");
+                        city = jsonObject.getString("city");
+                        //Store to local db
+                        try {
+                            db = new DBHelper(getApplicationContext());
+                            db.insertTaskAssignment(agentName, agentId, taskAssignmentId, taskParent,
+                                    taskType, siteName, lon, lat, address, city);
+                        } catch (SQLException e) {
+                            Log.d("Error input to local db", taskAssignmentId);
+                        }
+                    }
 
                     //Set session
                     SharedPreferences sp = getSharedPreferences("Login", 0);
                     SharedPreferences.Editor ed = sp.edit();
-                    ed.putString("name", agentName);
-                    ed.putInt("numOfTask", 0);
+                    ed.putString("agentName", agentName);
+                    ed.putString("agentId", agentId);
+                    ed.putString("taskAssignmentId", taskAssignmentId);
                     ed.commit();
 
                     //Open driver homepage activity
-                    Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
-                    LoginActivity.this.startActivity(myIntent);
+                    Intent myIntent = new Intent(ActivityLogin.this, ActivityMain.class);
+                    ActivityLogin.this.startActivity(myIntent);
                     finish();
                 } else {
                     Toast.makeText(getApplicationContext(), "Username atau password salah!", Toast.LENGTH_SHORT).show();

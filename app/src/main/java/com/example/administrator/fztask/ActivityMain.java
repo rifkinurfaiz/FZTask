@@ -1,9 +1,10 @@
 package com.example.administrator.fztask;
 
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
-import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
@@ -13,39 +14,50 @@ import android.widget.Toast;
  * Created by Administrator on 3/19/2018.
  */
 
-public class MainActivity extends AppCompatActivity{
+public class ActivityMain extends AppCompatActivity{
 
     private BottomNavigationView bottomNavigationView;
-    private Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Attaching the layout to the toolbar object
-        toolbar = (Toolbar) findViewById(R.id.toolBar);
-        setSupportActionBar(toolbar);
-
         bottomNavigationView = (BottomNavigationView) findViewById(R.id.navigationView);
+        bottomNavigationView.setOnNavigationItemReselectedListener(new BottomNavigationView.OnNavigationItemReselectedListener() {
+            @Override
+            public void onNavigationItemReselected(@NonNull MenuItem item) {
+
+            }
+        });
         bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-
+                Fragment selectedFragment = null;
                 switch (item.getItemId()){
                     case R.id.navigationHomepage :
-                        setContentView(R.layout.fragment_home);
+                        selectedFragment = FragmentHome.newInstance();
                         break;
                     case R.id.navigationActivity :
-                        Toast.makeText(MainActivity.this, "Star clicked", Toast.LENGTH_SHORT).show();
+                        selectedFragment = FragmentHome.newInstance();
                         break;
                     case R.id.navigationOthers :
-                        Toast.makeText(MainActivity.this, "Money clicked", Toast.LENGTH_SHORT).show();
+                        selectedFragment = FragmentOthers.newInstance();
                         break;
                 }
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                transaction.replace(R.id.frame_layout, selectedFragment);
+                transaction.commit();
 
                 return true;
             }
         });
+        //Manually displaying the first fragment - one time only
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.frame_layout, FragmentHome.newInstance());
+        transaction.commit();
+
+        //Set default fragment at start
+        bottomNavigationView.getMenu().getItem(0).setChecked(true);
     }
 }

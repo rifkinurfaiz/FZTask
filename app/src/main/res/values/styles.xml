@@ -10,6 +10,7 @@
         <item name="colorControlNormal">#c5c5c5</item>
         <item name="colorControlActivated">@color/colorAccent</item>
         <item name="colorControlHighlight">@color/colorAccent</item>
+        <item name="android:textColor">@color/colorAlmostBlack</item>
     </style>
 
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.DarkActionBar">
@@ -18,8 +19,14 @@
         <item name="android:windowBackground">@android:color/white</item>
     </style>
 
+    <!--Style for custom toolbar-->
     <style name="ActionBar" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
         <item name="android:textColorPrimary">@color/colorWhite</item>
     </style>
 
+    <!--Style for text input layout in activity_login-->
+    <style name="textInputLayout" parent="@android:style/TextAppearance">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/colorGrey</item>
+    </style>
 </resources>
